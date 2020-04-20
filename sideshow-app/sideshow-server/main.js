@@ -14,4 +14,4 @@ app.get('/metrics', (req, res) => {
   });
 });
 
-app.listen(port, () => console.log("sideshow server listening on ${port}"));
+app.listen(port, () => console.log(`sideshow server listening on ${port}`));

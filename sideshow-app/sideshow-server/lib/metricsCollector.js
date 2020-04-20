@@ -12,13 +12,18 @@ const getMetrics = function(cb) {
       return;
     }
 
-    const parsed = parse(stdout);
-    console.log(`parsed: ${parsed}`);
+    parse(stdout.trim(), { columns: true, skip_lines_with_error: true }, (parseError, parsed) => {
+      if (parseError) {
+        return cb(parseError, null);
+      }
 
-    const cpuTemp = parsed.find(metricsEntry => metricsEntry['Name'] === 'CPU Package' && metricsEntry['SensorType'] === 'Temperature');
-    const gpuTemp = parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Core' && metricsEntry['SensorType'] === 'Temperature');
+      console.dir(parsed);
 
-    cb(null, {cpuTemp, gpuTemp});
+      const cpu = parsed.find(metricsEntry => metricsEntry['Name'] === 'CPU Package' && metricsEntry['SensorType'] === 'Temperature');
+      const gpu = parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Core' && metricsEntry['SensorType'] === 'Temperature');
+
+      cb(null, {cpu: cpu.Value, gpu: gpu.Value});
+    });
   });
 }
 
