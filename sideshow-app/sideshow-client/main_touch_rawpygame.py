@@ -1,6 +1,6 @@
 #!python3
 
-import pygame
+import pygame, pigame
 from pygame.locals import *
 import os
 from time import sleep
@@ -38,10 +38,11 @@ class Sideshow():
   OFF_WHITE = (255, 255, 240)
 
   def __init__(self):
+    os.putenv('SDL_VIDEODRV','fbcon')
     os.putenv('SDL_FBDEV', '/dev/fb1')
-    os.putenv('SDL_MOUSEDRV', 'TSLIB')
-    os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
-
+    os.putenv('SDL_MOUSEDRV','dummy')
+    os.putenv('SDL_MOUSEDEV','/dev/null')
+    os.putenv('DISPLAY','')
     self.running = True
 
     signal.signal(signal.SIGINT, self.signal_handler)
@@ -113,19 +114,31 @@ class Sideshow():
 
   def run(self):
     pygame.init()
+    pitft = pigame.PiTft()
     self.font_big = pygame.font.Font('resources/simplifica.ttf', 120)
 
-    pygame.mouse.set_visible(False)
+    pygame.mouse.set_visible(True)
     self.lcd = pygame.display.set_mode((Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT))
     self.lcd.fill((0,0,0))
     pygame.display.update()
 
     while self.running:
       try:
+        pitft.update()
         self.metrics = MetricsClient.get_metrics()
         
         self.lcd.fill((0,0,0))
         self.render_cpu_gpu_temps_page()
+
+        for event in pygame.event.get():
+          if event.type is MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            logger.debug('Touch detected at %s', str(pos))
+          elif event.type is MOUSEBUTTONUP:
+            pos = pygame.mouse.get_pos()
+            logger.debug('UnTouch detected at %s', str(pos))  
+            pass
+
 
       except Exception as e:
         logger.error(str(e))
@@ -133,7 +146,7 @@ class Sideshow():
         print(track)
         # Try again after a second
       finally:
-        time.sleep(1)
+        time.sleep(0.1)
 
 
 def init_logging():
@@ -141,9 +154,11 @@ def init_logging():
   console_handler = logging.StreamHandler()
   console_handler.setFormatter(logging.Formatter(log_format))
   logger = logging.getLogger()
-  logger.setLevel(logging.INFO)
+  logger.setLevel(logging.DEBUG)
   logger.addHandler(console_handler)
   return logger
+
+print(os.environ)
 
 logger = init_logging()
 Sideshow().run()
