@@ -105,16 +105,20 @@ class Sideshow():
         lcd.fill((0,0,0))
 
         text_surface = font_big.render('%s' % metrics['cpu'], True, Sideshow.WHITE)
-        rect = text_surface.get_rect(center=(Sideshow.MARGIN + 45, Sideshow.MARGIN + 55))
+        rect = text_surface.get_rect(center=(320 - Sideshow.MARGIN - 40, 240 - Sideshow.MARGIN - 40))
         lcd.blit(text_surface, rect)
 
-        icon_rect = pygame.Rect(320 - Sideshow.MARGIN - 100, Sideshow.MARGIN - 5, 100, 100)
+        icon_rect = pygame.Rect(Sideshow.MARGIN, 240 - Sideshow.MARGIN - 100, 100, 100)
         icon_img = pygame.transform.scale(pygame.image.load('resources/cpu_line.png'), (icon_rect.width, icon_rect.height))
         lcd.blit(icon_img, icon_rect)
 
         text_surface = font_big.render('%s' % metrics['gpu'], True, Sideshow.WHITE)
-        rect = text_surface.get_rect(center=(320 - Sideshow.MARGIN - 40, 240 - Sideshow.MARGIN - 40))
+        rect = text_surface.get_rect(center=(Sideshow.MARGIN + 45, Sideshow.MARGIN + 55))
         lcd.blit(text_surface, rect)
+
+        icon_rect = pygame.Rect(320 - Sideshow.MARGIN - 100, Sideshow.MARGIN - 5, 100, 100)
+        icon_img = pygame.transform.scale(pygame.image.load('resources/gpu_line.png'), (icon_rect.width, icon_rect.height))
+        lcd.blit(icon_img, icon_rect)
 
         pygame.display.update()
       except Exception as e:
