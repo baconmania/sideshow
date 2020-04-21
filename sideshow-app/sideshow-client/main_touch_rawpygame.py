@@ -12,11 +12,12 @@ import signal
 import time
 from svg import Parser, Rasterizer
 import traceback
+import threading
 
 class MetricsRefresher:
-  def __init__(self, pitft):
-    self.pitft = pitft
+  def __init__(self):
     self.running = True
+    self.latest_metrics = {}
 
   def stop(self):
     self.running = False
@@ -24,7 +25,7 @@ class MetricsRefresher:
   def __call__(self):
     while self.running:
       try:
-        self.pitft.render_metrics(MetricsClient.get_metrics())
+        self.latest_metrics = MetricsClient.get_metrics()
       except Exception as e:
         logger.error(str(e))
         # Try again after a second
@@ -50,6 +51,7 @@ class Sideshow():
 
   def signal_handler(self, signal, frame):
     print('Killing...')
+    self.metrics_refresher.stop()
     self.running = False
     sys.exit(0)
 
@@ -98,7 +100,7 @@ class Sideshow():
     icon_img = pygame.transform.scale(pygame.image.load('resources/cpu_line.png'), (icon_rect.width, icon_rect.height))
     self.lcd.blit(icon_img, icon_rect)
 
-    text_surface = self.font_big.render('%s°' % self.metrics['temps']['cpu'], True, Sideshow.OFF_WHITE)
+    text_surface = self.font_big.render('%s°' % self.metrics_refresher.latest_metrics['temps']['cpu'], True, Sideshow.OFF_WHITE)
     rect = text_surface.get_rect(center=(icon_rect.center[0], Sideshow.MARGIN + 55))
     self.lcd.blit(text_surface, rect)
 
@@ -106,26 +108,30 @@ class Sideshow():
     icon_img = pygame.transform.scale(pygame.image.load('resources/gpu_line.png'), (icon_rect.width, icon_rect.height))
     self.lcd.blit(icon_img, icon_rect)
 
-    text_surface = self.font_big.render('%s°' % self.metrics['temps']['gpu'], True, Sideshow.OFF_WHITE)
+    text_surface = self.font_big.render('%s°' % self.metrics_refresher.latest_metrics['temps']['gpu'], True, Sideshow.OFF_WHITE)
     rect = text_surface.get_rect(center=(icon_rect.center[0], Sideshow.SCREEN_HEIGHT - Sideshow.MARGIN - 40))
     self.lcd.blit(text_surface, rect)
 
     pygame.display.update()
 
   def run(self):
+    self.metrics_refresher = MetricsRefresher()
+    threading.Thread(target=self.metrics_refresher).start()
+
     pygame.init()
     pitft = pigame.PiTft()
-    self.font_big = pygame.font.Font('resources/simplifica.ttf', 120)
 
     pygame.mouse.set_visible(True)
+
     self.lcd = pygame.display.set_mode((Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT))
     self.lcd.fill((0,0,0))
+    self.font_big = pygame.font.Font('resources/simplifica.ttf', 120)
+
     pygame.display.update()
 
     while self.running:
       try:
         pitft.update()
-        self.metrics = MetricsClient.get_metrics()
         
         self.lcd.fill((0,0,0))
         self.render_cpu_gpu_temps_page()
@@ -138,8 +144,6 @@ class Sideshow():
             pos = pygame.mouse.get_pos()
             logger.debug('UnTouch detected at %s', str(pos))  
             pass
-
-
       except Exception as e:
         logger.error(str(e))
         track = traceback.format_exc()
