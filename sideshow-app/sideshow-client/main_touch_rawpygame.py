@@ -37,6 +37,7 @@ class Sideshow():
   SCREEN_HEIGHT = 240
   MARGIN = 20
   OFF_WHITE = (255, 255, 240)
+  BLACK = (0, 0, 0)
 
   def __init__(self):
     os.putenv('SDL_VIDEODRV','fbcon')
@@ -85,7 +86,7 @@ class Sideshow():
     pygame.mouse.set_visible(True)
 
     self.lcd = pygame.display.set_mode((Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT))
-    self.lcd.fill((0,0,0))
+    self.lcd.fill(Sideshow.BLACK)
     self.font_big = pygame.font.Font('resources/simplifica.ttf', 120)
 
     pygame.display.update()
@@ -94,7 +95,7 @@ class Sideshow():
       try:
         pitft.update()
         
-        self.lcd.fill((0,0,0))
+        self.lcd.fill(Sideshow.BLACK)
         self.render_cpu_gpu_temps_page()
 
         for event in pygame.event.get():
@@ -107,8 +108,8 @@ class Sideshow():
             pass
       except Exception as e:
         logger.error(str(e))
-        track = traceback.format_exc()
-        print(track)
+        trace = traceback.format_exc()
+        print(trace)
         # Try again after a second
       finally:
         time.sleep(0.1)
