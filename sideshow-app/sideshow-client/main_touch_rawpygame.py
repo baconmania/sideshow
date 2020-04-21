@@ -89,38 +89,41 @@ class Sideshow():
     image = pygame.image.frombuffer(buff, (req_w, req_h), 'ARGB')
     return image
 
+  def render_cpu_gpu_temps_page(self):
+    icon_rect = pygame.Rect(Sideshow.MARGIN, 240 - Sideshow.MARGIN - 100, 100, 100)
+    icon_img = pygame.transform.scale(pygame.image.load('resources/cpu_line.png'), (icon_rect.width, icon_rect.height))
+    self.lcd.blit(icon_img, icon_rect)
+
+    text_surface = self.font_big.render('%s°' % self.metrics['temps']['cpu'], True, Sideshow.WHITE)
+    rect = text_surface.get_rect(center=(icon_rect.center[0], Sideshow.MARGIN + 55))
+    self.lcd.blit(text_surface, rect)
+
+    icon_rect = pygame.Rect(320 - Sideshow.MARGIN - 100, Sideshow.MARGIN - 5, 100, 100)
+    icon_img = pygame.transform.scale(pygame.image.load('resources/gpu_line.png'), (icon_rect.width, icon_rect.height))
+    self.lcd.blit(icon_img, icon_rect)
+
+    text_surface = self.font_big.render('%s°' % self.metrics['temps']['gpu'], True, Sideshow.WHITE)
+    rect = text_surface.get_rect(center=(icon_rect.center[0], 240 - Sideshow.MARGIN - 40))
+    self.lcd.blit(text_surface, rect)
+
+    pygame.display.update()
+
   def run(self):
     pygame.init()
-    font_big = pygame.font.Font('resources/simplifica.ttf', 120)
+    self.font_big = pygame.font.Font('resources/simplifica.ttf', 120)
 
     pygame.mouse.set_visible(False)
-    lcd = pygame.display.set_mode((320, 240))
-    lcd.fill((0,0,0))
+    self.lcd = pygame.display.set_mode((320, 240))
+    self.lcd.fill((0,0,0))
     pygame.display.update()
 
     while self.running:
       try:
-        metrics = MetricsClient.get_metrics()
+        self.metrics = MetricsClient.get_metrics()
         
-        lcd.fill((0,0,0))
+        self.lcd.fill((0,0,0))
+        self.render_cpu_gpu_temps_page()
 
-        icon_rect = pygame.Rect(Sideshow.MARGIN, 240 - Sideshow.MARGIN - 100, 100, 100)
-        icon_img = pygame.transform.scale(pygame.image.load('resources/cpu_line.png'), (icon_rect.width, icon_rect.height))
-        lcd.blit(icon_img, icon_rect)
-
-        text_surface = font_big.render('%s' % metrics['cpu'], True, Sideshow.WHITE)
-        rect = text_surface.get_rect(center=(icon_rect.center[0], Sideshow.MARGIN + 55))
-        lcd.blit(text_surface, rect)
-
-        icon_rect = pygame.Rect(320 - Sideshow.MARGIN - 100, Sideshow.MARGIN - 5, 100, 100)
-        icon_img = pygame.transform.scale(pygame.image.load('resources/gpu_line.png'), (icon_rect.width, icon_rect.height))
-        lcd.blit(icon_img, icon_rect)
-
-        text_surface = font_big.render('%s' % metrics['gpu'], True, Sideshow.WHITE)
-        rect = text_surface.get_rect(center=(icon_rect.center[0], 240 - Sideshow.MARGIN - 40))
-        lcd.blit(text_surface, rect)
-
-        pygame.display.update()
       except Exception as e:
         logger.error(str(e))
         track = traceback.format_exc()
