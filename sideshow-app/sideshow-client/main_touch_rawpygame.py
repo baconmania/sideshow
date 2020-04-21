@@ -72,7 +72,7 @@ class Sideshow():
     back_button_img = pygame.image.load('resources/back.png')
     back_button_rect = back_button_img.get_rect(left=Sideshow.MARGIN, top=Sideshow.MARGIN)
     self.touch_targets['BACK_BUTTON'] = back_button_rect
-    self.lcd.blit(back_button_img, back_button_rect) 
+    self.lcd.blit(back_button_img, back_button_rect)
 
     LARGE_SQUARE_ICON_SIZE = 100
     cpu_icon_rect = pygame.Rect(Sideshow.MARGIN, Sideshow.SCREEN_HEIGHT - Sideshow.MARGIN - LARGE_SQUARE_ICON_SIZE, LARGE_SQUARE_ICON_SIZE, LARGE_SQUARE_ICON_SIZE)
@@ -88,7 +88,7 @@ class Sideshow():
 
   def render_gpu_page(self):
     back_button_img = pygame.image.load('resources/back.png')
-    back_button_touch_target = back_button_img.get_rect(left=0, top=0, width=50, height=50)
+    back_button_touch_target = back_button_img.get_rect(left=0, top=0, width=100, height=100)
     self.touch_targets['BACK_BUTTON'] = back_button_touch_target
     back_button_rect = back_button_img.get_rect(left=Sideshow.MARGIN, top=Sideshow.MARGIN)
     self.lcd.blit(back_button_img, back_button_rect) 
@@ -153,7 +153,7 @@ class Sideshow():
     pygame.init()
     pitft = pigame.PiTft()
 
-    pygame.mouse.set_visible(True)
+    pygame.mouse.set_visible(False)
 
     self.lcd = pygame.display.set_mode((Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT))
     self.lcd.fill(Sideshow.BLACK)
