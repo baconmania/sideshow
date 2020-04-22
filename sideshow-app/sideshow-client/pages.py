@@ -84,6 +84,19 @@ class CpuDetailPage(SideshowDetailPage):
   def __init__(self, lcd, touch_targets, latest_metrics, screen_dimensions):
     super().__init__(lcd, touch_targets, latest_metrics, screen_dimensions)
 
+  @staticmethod
+  def get_core_icon_for_load(load):
+    path = ''
+
+    if load < 45:
+      path = 'resources/core_low.png'
+    elif load < 80:
+      path = 'resources/core_medium.png'
+    else:
+      path = 'resources/core_high.png'
+
+    return pygame.image.load(path)
+
   def render_detail_page(self):
     icon_img = pygame.image.load('resources/cpu_line_250.png')
     gpu_icon_rect = icon_img.get_rect(center=(50, self.screen_height - 50))
@@ -99,7 +112,11 @@ class CpuDetailPage(SideshowDetailPage):
     load_text_surfaces = [ self.font_small.render('%d%%' % round(float(load['load'])), True, SideshowPage.OFF_WHITE) for (_, load) in enumerate(self.latest_metrics['load']['cpu'])]
     load_text_rects = [ load_text_surface.get_rect(right=self.screen_width - 20, top=int(core) * 25 + 20) for (core, load_text_surface) in enumerate(load_text_surfaces) ]
 
+    core_icons = [ CpuDetailPage.get_core_icon_for_load(round(float(load['load']))) for (core, load) in enumerate(self.latest_metrics['load']['cpu'])]
+    core_icon_rects = [ core_icon.get_rect(left=self.screen_width - 152, centery=load_text_rects[core].centery - 2) for (core, core_icon) in enumerate(core_icons) ]
+
     for i in range(len(load_text_surfaces)):
+      self.lcd.blit(core_icons[i], core_icon_rects[i])
       self.lcd.blit(core_label_text_surfaces[i], core_label_text_rects[i])
       self.lcd.blit(load_text_surfaces[i], load_text_rects[i])
 
