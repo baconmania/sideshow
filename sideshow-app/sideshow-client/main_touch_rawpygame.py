@@ -58,6 +58,16 @@ class Sideshow():
     self.running = False
     sys.exit(0)
 
+  @staticmethod
+  def blit_alpha(target, source, location, opacity_factor):
+        x = location[0]
+        y = location[1]
+        temp = pygame.Surface((source.get_width(), source.get_height())).convert()
+        temp.blit(target, (-x, -y))
+        temp.blit(source, (0, 0))
+        temp.set_alpha(255 * opacity_factor)        
+        target.blit(temp, location)
+
   def render_current_page(self):
     try:
       {
@@ -87,26 +97,26 @@ class Sideshow():
     pygame.display.update()
 
   def render_gpu_page(self):
+    self.touch_targets = {}
     back_button_img = pygame.image.load('resources/back.png')
     back_button_touch_target = back_button_img.get_rect(left=0, top=0, width=100, height=100)
     self.touch_targets['BACK_BUTTON'] = back_button_touch_target
     back_button_rect = back_button_img.get_rect(left=Sideshow.MARGIN, top=Sideshow.MARGIN)
-    self.lcd.blit(back_button_img, back_button_rect) 
+    self.lcd.blit(back_button_img, back_button_rect)
 
-    LARGE_SQUARE_ICON_SIZE = 100
-
-    gpu_icon_rect = pygame.Rect(Sideshow.SCREEN_WIDTH - Sideshow.MARGIN - LARGE_SQUARE_ICON_SIZE, Sideshow.MARGIN - 5, LARGE_SQUARE_ICON_SIZE, LARGE_SQUARE_ICON_SIZE)
-    self.touch_targets['GPU_ICON'] = gpu_icon_rect
-    icon_img = pygame.image.load('resources/gpu_line.png')
-    self.lcd.blit(icon_img, gpu_icon_rect)
+    icon_img = pygame.image.load('resources/gpu_line_250.png').convert_alpha()
+    icon_img.set_alpha(50)
+    gpu_icon_rect = icon_img.get_rect(center=(50, Sideshow.SCREEN_HEIGHT - 90))
+    Sideshow.blit_alpha(self.lcd, icon_img, (gpu_icon_rect.x, gpu_icon_rect.y), .28)
 
     text_surface = self.font_big.render('%s°' % self.metrics_refresher.latest_metrics['temps']['gpu'], True, Sideshow.OFF_WHITE)
-    rect = text_surface.get_rect(center=(gpu_icon_rect.center[0], Sideshow.SCREEN_HEIGHT - Sideshow.MARGIN - 40))
+    rect = text_surface.get_rect(left=Sideshow.MARGIN, bottom=Sideshow.SCREEN_HEIGHT)
     self.lcd.blit(text_surface, rect)
 
     pygame.display.update()
 
   def render_home_page(self):
+    self.touch_targets = {}
     LARGE_SQUARE_ICON_SIZE = 100
     cpu_icon_rect = pygame.Rect(Sideshow.MARGIN, Sideshow.SCREEN_HEIGHT - Sideshow.MARGIN - LARGE_SQUARE_ICON_SIZE, LARGE_SQUARE_ICON_SIZE, LARGE_SQUARE_ICON_SIZE)
     self.touch_targets['CPU_ICON'] = cpu_icon_rect
