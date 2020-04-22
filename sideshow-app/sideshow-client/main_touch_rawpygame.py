@@ -43,6 +43,7 @@ class Sideshow():
     os.putenv('SDL_MOUSEDEV','/dev/null')
     os.putenv('DISPLAY','')
     self.last_touch_epoch_millis = 0
+    self.enable_carousel = True
     self.running = True
     self.current_page = 'HOME'
     self.touch_targets = {}
@@ -119,8 +120,13 @@ class Sideshow():
             logger.debug('Touched target was %s' % touched_target)
 
             if touched_target is not None:
+              if touched_target in ['CPU_ICON', 'GPU_ICON']:
+                self.enable_carousel = False
+              elif touched_target is 'BACK_BUTTON':
+                self.enable_carousel = True
+
               self.current_page = self.get_page_for_touch_target(touched_target)
-          elif event.type is USEREVENT+1 and int(round(time.time() * 1000)) - self.last_touch_epoch_millis >= 30 * 1000:
+          elif event.type is USEREVENT+1 and self.enable_carousel and int(round(time.time() * 1000)) - self.last_touch_epoch_millis >= 30 * 1000:
             self.current_page = random.choice(['CPU_PAGE', 'GPU_PAGE', 'HOME'])
 
         self.lcd.fill(SideshowPage.BLACK)
