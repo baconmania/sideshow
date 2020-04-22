@@ -8,6 +8,7 @@ import time
 import traceback
 import threading
 import pygame, pigame
+import random
 from pygame.locals import *
 import RPi.GPIO as GPIO
 import MetricsClient
@@ -41,6 +42,7 @@ class Sideshow():
     os.putenv('SDL_MOUSEDRV','dummy')
     os.putenv('SDL_MOUSEDEV','/dev/null')
     os.putenv('DISPLAY','')
+    self.last_touch_epoch_millis = 0
     self.running = True
     self.current_page = 'HOME'
     self.touch_targets = {}
@@ -88,6 +90,9 @@ class Sideshow():
     threading.Thread(target=self.metrics_refresher).start()
 
     pygame.init()
+
+    pygame.time.set_timer(USEREVENT+1, 30 * 1000)
+
     pitft = pigame.PiTft()
 
     pygame.mouse.set_visible(False)
@@ -106,6 +111,7 @@ class Sideshow():
             pos = pygame.mouse.get_pos()
             logger.debug('Touch detected at %s', str(pos))
           elif event.type is MOUSEBUTTONUP:
+            self.last_touch_epoch_millis = int(round(time.time() * 1000))
             pos = pygame.mouse.get_pos()
             logger.debug('UnTouch detected at %s', str(pos))  
             touched_target = self.get_touched_target(pos)
@@ -114,6 +120,8 @@ class Sideshow():
 
             if touched_target is not None:
               self.current_page = self.get_page_for_touch_target(touched_target)
+          elif event.type is USEREVENT+1 and int(round(time.time() * 1000)) - self.last_touch_epoch_millis >= 30 * 1000:
+            self.current_page = random.choice(['CPU_PAGE', 'GPU_PAGE', 'HOME'])
 
         self.lcd.fill(SideshowPage.BLACK)
         self.render_current_page()
