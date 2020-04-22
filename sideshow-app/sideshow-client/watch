@@ -4,7 +4,7 @@ echo "Watching $1"
 while true; do
   python3 $@ &
   PID=$!
-  inotifywait -e modify $1
+  inotifywait -e modify $(dirname $1)/*.py
   echo "Killing $PID"
   while $(kill -2 $PID 2>/dev/null); do
     sleep 1
