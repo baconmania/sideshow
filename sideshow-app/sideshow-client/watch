@@ -2,6 +2,7 @@
 echo "Watching $1"
 
 while true; do
+  sudo killall python3
   python3 $@ &
   PID=$!
   inotifywait -e modify $(dirname $1)/*.py

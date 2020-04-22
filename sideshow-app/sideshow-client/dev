@@ -1,4 +1,3 @@
 #!/bin/bash
-sudo killall python3
 export PIGAME_SWAPXY=on && export PIGAME_INVERTY=on
 sudo -E ./watch main_touch_rawpygame.py
