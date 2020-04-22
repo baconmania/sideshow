@@ -61,10 +61,9 @@ class Sideshow():
         'CPU_PAGE': CpuDetailPage,
         'GPU_PAGE': GpuDetailPage,
         'HOME': HomePage
-      }[self.current_page](self.lcd, self.touch_targets, self.metrics_refresher.latest_metrics, (Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT)).render_page()
+      }[self.current_page](self.lcd, self.touch_targets, self.metrics_refresher.latest_metrics, (Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT)).render()
     except KeyError:
-      HomePage(self.lcd, self.touch_targets, self.metrics_refresher.latest_metrics, (Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT)).render_page()
-    pygame.display.update()
+      HomePage(self.lcd, self.touch_targets, self.metrics_refresher.latest_metrics, (Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT)).render()
 
   def get_touched_target(self, touch_pos):
     for (touch_target_id, touch_target_rect) in self.touch_targets.items():
