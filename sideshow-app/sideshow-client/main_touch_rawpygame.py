@@ -146,7 +146,7 @@ def init_logging():
   console_handler.setFormatter(logging.Formatter(log_format))
   logger = logging.getLogger()
   logging.getLogger('urllib3.connectionpool').setLevel(logging.WARN)
-  logger.setLevel(logging.DEBUG)
+  logger.setLevel(logging.INFO)
   logger.addHandler(console_handler)
   return logger
 

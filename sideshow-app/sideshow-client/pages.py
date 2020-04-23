@@ -133,3 +133,15 @@ class GpuDetailPage(SideshowDetailPage):
     text_surface = self.font_big.render('%s°' % self.latest_metrics['temps']['gpu'], True, SideshowPage.OFF_WHITE)
     rect = text_surface.get_rect(left=SideshowPage.MARGIN, bottom=self.screen_height)
     self.lcd.blit(text_surface, rect)
+
+    bar_img = pygame.image.load('resources/bar_low_longer.png')
+    bar_outline_img = pygame.image.load('resources/bar_outline_low_longer.png')
+    bar_outline_rect = bar_outline_img.get_rect(center=(self.screen_width - 90, 50))
+    bar_img_rect = bar_outline_rect.copy()
+    bar_img_rect.height=bar_img.get_rect().height
+    bar_img_rect.width=bar_img.get_rect().width
+    bar_img_rect = bar_img_rect.clip(pygame.Rect(bar_outline_rect.left, bar_outline_rect.top, bar_outline_rect.width / 2, bar_outline_rect.height))
+
+    
+    self.lcd.blit(bar_outline_img, bar_outline_rect)
+    self.lcd.blit(bar_img, bar_img_rect, (0, 0, bar_img_rect.width, bar_img_rect.height))
