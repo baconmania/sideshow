@@ -125,6 +125,19 @@ class GpuDetailPage(SideshowDetailPage):
   def __init__(self, lcd, touch_targets, latest_metrics, screen_dimensions):
     super().__init__(lcd, touch_targets, latest_metrics, screen_dimensions)
 
+  @staticmethod
+  def get_load_level(load):
+    level = ''
+
+    if load < 45:
+      level = 'low'
+    elif load < 80:
+      level = 'medium'
+    else:
+      level = 'high'
+
+    return level
+
   def render_detail_page(self):
     icon_img = pygame.image.load('resources/gpu_line_250.png')
     gpu_icon_rect = icon_img.get_rect(center=(50, self.screen_height - 90))
@@ -134,14 +147,59 @@ class GpuDetailPage(SideshowDetailPage):
     rect = text_surface.get_rect(left=SideshowPage.MARGIN, bottom=self.screen_height)
     self.lcd.blit(text_surface, rect)
 
-    bar_img = pygame.image.load('resources/bar_low_longer.png')
-    bar_outline_img = pygame.image.load('resources/bar_outline_low_longer.png')
-    bar_outline_rect = bar_outline_img.get_rect(center=(self.screen_width - 90, 50))
+    core_load = float(self.latest_metrics['load']['gpuCore'])
+    core_load_level = GpuDetailPage.get_load_level(core_load)
+
+    bar_img = pygame.image.load('resources/bar_%s_longer.png' % core_load_level)
+    bar_outline_img = pygame.image.load('resources/bar_outline_%s_longer.png' % core_load_level)
+    bar_outline_rect = bar_outline_img.get_rect(center=(self.screen_width - 87, 60))
     bar_img_rect = bar_outline_rect.copy()
     bar_img_rect.height=bar_img.get_rect().height
     bar_img_rect.width=bar_img.get_rect().width
-    bar_img_rect = bar_img_rect.clip(pygame.Rect(bar_outline_rect.left, bar_outline_rect.top, bar_outline_rect.width / 2, bar_outline_rect.height))
+    bar_img_rect = bar_img_rect.clip(pygame.Rect(bar_outline_rect.left, bar_outline_rect.top, bar_outline_rect.width * (core_load / 100.0), bar_outline_rect.height))
 
+    core_load_label = self.font_small.render('Core', True, SideshowPage.OFF_WHITE)
+    core_load_label_rect = core_load_label.get_rect(left=bar_outline_rect.left + 10 , top=SideshowPage.MARGIN)
+    
+    self.lcd.blit(core_load_label, core_load_label_rect)
+
+    self.lcd.blit(bar_outline_img, bar_outline_rect)
+    self.lcd.blit(bar_img, bar_img_rect, (0, 0, bar_img_rect.width, bar_img_rect.height))
+
+    engine_load = float(self.latest_metrics['load']['gpuRenderingEngine'])
+    engine_load_level = GpuDetailPage.get_load_level(engine_load)
+
+    bar_img = pygame.image.load('resources/bar_%s_longer.png' % engine_load_level)
+    bar_outline_img = pygame.image.load('resources/bar_outline_%s_longer.png' % engine_load_level)
+    bar_outline_rect = bar_outline_img.get_rect(center=(self.screen_width - 87, 120))
+    bar_img_rect = bar_outline_rect.copy()
+    bar_img_rect.height=bar_img.get_rect().height
+    bar_img_rect.width=bar_img.get_rect().width
+    bar_img_rect = bar_img_rect.clip(pygame.Rect(bar_outline_rect.left, bar_outline_rect.top, bar_outline_rect.width * (engine_load / 100.0), bar_outline_rect.height))
+
+    renderer_load_label = self.font_small.render('Renderer', True, SideshowPage.OFF_WHITE)
+    renderer_load_label_rect = renderer_load_label.get_rect(left=bar_outline_rect.left + 10 , top=80)
+
+    self.lcd.blit(renderer_load_label, renderer_load_label_rect)
+
+    self.lcd.blit(bar_outline_img, bar_outline_rect)
+    self.lcd.blit(bar_img, bar_img_rect, (0, 0, bar_img_rect.width, bar_img_rect.height))
+
+    video_memory_usage = self.latest_metrics['memory']['gpuUsed'] / self.latest_metrics['memory']['gpuTotal'] * 100.0
+    video_memory_usage_level = GpuDetailPage.get_load_level(video_memory_usage)
+
+    bar_img = pygame.image.load('resources/bar_%s_longer.png' % video_memory_usage_level)
+    bar_outline_img = pygame.image.load('resources/bar_outline_%s_longer.png' % video_memory_usage_level)
+    bar_outline_rect = bar_outline_img.get_rect(center=(self.screen_width - 87, 180))
+    bar_img_rect = bar_outline_rect.copy()
+    bar_img_rect.height=bar_img.get_rect().height
+    bar_img_rect.width=bar_img.get_rect().width
+    bar_img_rect = bar_img_rect.clip(pygame.Rect(bar_outline_rect.left, bar_outline_rect.top, bar_outline_rect.width * (video_memory_usage / 100.0), bar_outline_rect.height))
+
+    video_memory_usage_label = self.font_small.render('Video Memory', True, SideshowPage.OFF_WHITE)
+    video_memory_usage_label_rect = video_memory_usage_label.get_rect(left=bar_outline_rect.left + 10 , top=140)
+
+    self.lcd.blit(video_memory_usage_label, video_memory_usage_label_rect)
     
     self.lcd.blit(bar_outline_img, bar_outline_rect)
     self.lcd.blit(bar_img, bar_img_rect, (0, 0, bar_img_rect.width, bar_img_rect.height))

@@ -30,7 +30,7 @@ class MetricsRefresher:
         logger.error(str(e))
         # Try again after a second
       finally:
-        time.sleep(1)
+        time.sleep(1.0)
 
 class Sideshow():
   SCREEN_WIDTH = 320
@@ -146,7 +146,7 @@ def init_logging():
   console_handler.setFormatter(logging.Formatter(log_format))
   logger = logging.getLogger()
   logging.getLogger('urllib3.connectionpool').setLevel(logging.WARN)
-  logger.setLevel(logging.INFO)
+  logger.setLevel(logging.DEBUG)
   logger.addHandler(console_handler)
   return logger
 
