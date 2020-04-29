@@ -1,7 +1,7 @@
 const { exec } = require('child_process');
 const parse = require('csv-parse');
 
-const getMetrics = function(cb) {
+const getMetrics = function (cb) {
   exec("wmic.exe '/NAMESPACE:\\\\root\\OpenHardwareMonitor' /NODE:'localhost' path Sensor get /FORMAT:CSV", (error, stdout, stderr) => {
     if (error) {
       cb(Error(error), null);
@@ -17,12 +17,32 @@ const getMetrics = function(cb) {
         return cb(parseError, null);
       }
 
-      console.dir(parsed);
+      const cpuTemp = +parsed.find(metricsEntry => metricsEntry['Name'] === 'CPU Package' && metricsEntry['SensorType'] === 'Temperature').Value;
+      const gpuTemp = +parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Core' && metricsEntry['SensorType'] === 'Temperature').Value;
 
-      const cpu = parsed.find(metricsEntry => metricsEntry['Name'] === 'CPU Package' && metricsEntry['SensorType'] === 'Temperature');
-      const gpu = parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Core' && metricsEntry['SensorType'] === 'Temperature');
+      const cpuLoads = parsed
+        .filter(metricsEntry => metricsEntry['Name'].startsWith('CPU Core') && metricsEntry['SensorType'] === 'Load')
+        .sort(metricsEntry => Number.parseInt(metricsEntry['Name'].match(/\d/)[0]))
+        .map(metricsEntry => {
+          return { load: +metricsEntry['Value'] };
+        });
+      const gpuCoreLoad = +parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Core' && metricsEntry['SensorType'] === 'Load').Value;
+      const gpuEngineLoad = +parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Video Engine' && metricsEntry['SensorType'] === 'Load').Value;
+      const gpuMemoryUsed = +parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Memory Used' && metricsEntry['SensorType'] === 'SmallData').Value;
+      const gpuMemoryTotal = +parsed.find(metricsEntry => metricsEntry['Name'] === 'GPU Memory Total' && metricsEntry['SensorType'] === 'SmallData').Value;
 
-      cb(null, {cpu: cpu.Value, gpu: gpu.Value});
+      cb(null, { 
+        temps: {
+          cpu: cpuTemp, gpu: gpuTemp
+        },
+        load: {
+          cpu: cpuLoads, gpuCore: gpuCoreLoad, gpuRenderingEngine: gpuEngineLoad
+        },
+        memory: {
+          gpuUsed: gpuMemoryUsed,
+          gpuTotal: gpuMemoryTotal
+        }
+      });
     });
   });
 }
