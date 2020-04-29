@@ -136,7 +136,10 @@ class Sideshow():
     while self.running:
       try:
         self.pitft.update()
-        [ self.handle_pygame_event(event) for event in pygame.event.get() ]
+
+        for event in pygame.event.get():
+          self.handle_pygame_event(event)
+
         self.render_current_page()
       except Exception as e:
         logger.error(str(e))
