@@ -109,28 +109,34 @@ class Sideshow():
     if self.enable_carousel and int(round(time.time() * 1000)) - self.last_touch_epoch_millis >= 30 * 1000:
       self.current_page = random.choice(['CPU_PAGE', 'GPU_PAGE', 'HOME'])
 
-  def run(self):
+  def init_metrics_refresher(self):
     self.metrics_refresher = MetricsRefresher()
     threading.Thread(target=self.metrics_refresher).start()
 
+  def init_pygame(self):
     pygame.init()
     pygame.mouse.set_visible(False)
     pygame.time.set_timer(Sideshow.CUSTOM_EVENT_ADVANCE_CAROUSEL, 30 * 1000)
 
-    pitft = pigame.PiTft()
-
+  def init_touchscreen(self):
     self.lcd = pygame.display.set_mode((Sideshow.SCREEN_WIDTH, Sideshow.SCREEN_HEIGHT))
+    self.pitft = pigame.PiTft()
+
+  def handle_pygame_event(self, event):
+    if event.type is pygame.MOUSEBUTTONDOWN:
+      self.handle_touch()
+    elif event.type is Sideshow.CUSTOM_EVENT_ADVANCE_CAROUSEL:
+      self.advance_carousel()
+
+  def run(self):
+    self.init_metrics_refresher()
+    self.init_pygame()
+    self.init_touchscreen()
 
     while self.running:
       try:
-        pitft.update()
-
-        for event in pygame.event.get():
-          if event.type is pygame.MOUSEBUTTONDOWN:
-            self.handle_touch()
-          elif event.type is Sideshow.CUSTOM_EVENT_ADVANCE_CAROUSEL:
-            self.advance_carousel()
-
+        self.pitft.update()
+        [ self.handle_pygame_event(event) for event in pygame.event.get() ]
         self.render_current_page()
       except Exception as e:
         logger.error(str(e))
