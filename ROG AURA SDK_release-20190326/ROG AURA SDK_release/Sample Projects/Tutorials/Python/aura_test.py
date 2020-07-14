@@ -5,7 +5,7 @@ from time import sleep
 import sys
 from colour import Color
 import re
-
+from collections import defaultdict
 running = True
 
 def terminateProcess(signalNumber, frame):
@@ -42,32 +42,46 @@ auraSdk.SwitchMode()
 signal.signal(signal.SIGTERM, terminateProcess)
 
 colors = list(Color("#00a6ff").range_to(Color("#5500ff"),50))
+devices = auraSdk.Enumerate(LedDeviceType.DRAM_RGB)
 
 frame = 0
+frames_by_led = defaultdict(lambda: defaultdict(list))
+
+for i in range(0, devices.Count):
+    for j in range(0, devices[0].Lights.Count):
+        frames_by_led[i][j] = 0
 
 def flip_bits(color):
     matches = re.fullmatch(r'#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})', color.hex_l)
     return Color('#%s%s%s' % (matches.group(3), matches.group(2), matches.group(1)))
     # colors[frame].hex_l[1:]
 
-def paint():
-    color = int('ff' + flip_bits(colors[frame]).hex_l[1:], 16)
+def paint():    
     # print('Painting frame %d with actual bytes %s' % (frame, hex(color)))
 
     # print("Painting %s" % hex(color))
-    devices = auraSdk.Enumerate(LedDeviceType.ALL)
-    for dev in devices:
+
+    # print(dir(devices))
+
+    for dev in range(0, devices.Count):
+        device = devices[dev]
         # print(dir(dev))
         # print("LED count: %d" % dev.Lights.Count)
 
-        for i in range(dev.Lights.Count):
-            dev.Lights(i).color = color # 0xAABBGGRR
+        for i in range(device.Lights.Count):
+            color = int('ff' + flip_bits(colors[frames_by_led[dev][i]]).hex_l[1:], 16)
+            device.Lights(i).color = color # 0xAABBGGRR
 
         # if dev.Type == LedDeviceType.DRAM_RGB:
         #     print([method_name for method_name in dir(dev)
         #               if callable(getattr(dev, method_name))])
 
-        dev.Apply()
+        device.Apply()
+
+def advance():
+    for i in range(0, devices.Count):
+        for j in range(0, devices[0].Lights.Count):
+            frames_by_led[i][j] = (frames_by_led[i][j] + 1) % len(colors)
 
 
 forward = True
@@ -85,4 +99,5 @@ while True and running:
     if frame <= 0:
         forward = True
         frame = 0
+    advance()
     # sleep(0.001)
