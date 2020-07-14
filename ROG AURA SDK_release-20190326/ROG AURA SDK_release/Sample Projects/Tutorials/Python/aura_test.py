@@ -49,7 +49,7 @@ frames_by_led = defaultdict(lambda: defaultdict(list))
 
 for i in range(0, devices.Count):
     for j in range(0, devices[0].Lights.Count):
-        frames_by_led[i][j] = 0
+        frames_by_led[i][j] = (0, True) # make this a class instead of a tuple
 
 def flip_bits(color):
     matches = re.fullmatch(r'#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})', color.hex_l)
@@ -69,7 +69,7 @@ def paint():
         # print("LED count: %d" % dev.Lights.Count)
 
         for i in range(device.Lights.Count):
-            color = int('ff' + flip_bits(colors[frames_by_led[dev][i]]).hex_l[1:], 16)
+            color = int('ff' + flip_bits(colors[frames_by_led[dev][i][0]]).hex_l[1:], 16)
             device.Lights(i).color = color # 0xAABBGGRR
 
         # if dev.Type == LedDeviceType.DRAM_RGB:
@@ -81,7 +81,22 @@ def paint():
 def advance():
     for i in range(0, devices.Count):
         for j in range(0, devices[0].Lights.Count):
-            frames_by_led[i][j] = (frames_by_led[i][j] + 1) % len(colors)
+            if frames_by_led[i][j][1]:
+                new_frame = (frames_by_led[i][j][0] + 1)
+                if new_frame >= len(colors):
+                    new_frame = len(colors) - 1
+                    forward = False
+                else:
+                    forward = True
+            else:
+                new_frame = (frames_by_led[i][j][0] - 1)
+                if new_frame <= 0:
+                    new_frame = 0
+                    forward = True
+                else:
+                    forward = False
+
+            frames_by_led[i][j] = (new_frame, forward)
 
 
 forward = True
