@@ -1,17 +1,13 @@
 import win32com.client
 import signal
 from enum import IntEnum
+from enum import Enum
 from time import sleep
 import sys
 from colour import Color
 import re
 from collections import defaultdict
-running = True
 
-def terminateProcess(signalNumber, frame):
-    print ('(SIGTERM) terminating the process')
-    running = False
-    sys.exit()
 
 class LedDeviceType(IntEnum):
     ALL = 0
@@ -32,87 +28,103 @@ class LedDeviceType(IntEnum):
     CHASSIS_RGB = 0xB0000
     PROJECTOR_RGB = 0xC0000
 
-################## main script #####################
-print("starting")
-auraSdk = win32com.client.Dispatch("aura.sdk.1")
-auraSdk.SwitchMode()
+class AnimationDirection(Enum):
+    FORWARD = 1
+    REVERSE = 2
 
-# print ("Device Count = " + str(devices.Count))
+class LedAnimationState:
+    frame = None
+    direction = None
 
-signal.signal(signal.SIGTERM, terminateProcess)
+    def __init__(self, frame, direction):
+        self.frame = frame
+        self.direction = direction
 
-colors = list(Color("#00a6ff").range_to(Color("#5500ff"),20))
-devices = auraSdk.Enumerate(LedDeviceType.ALL)
+class LightShow():
+    aura_sdk = None
+    devices = []
+    colors = []
+    frames_by_led = None
 
-frame = 0
-frames_by_led = defaultdict(lambda: defaultdict(list))
+    def __init__(self, spectrum_start_color, spectrum_end_color):
+        self.prepare_sdk()
+        self.prepare_for_animations(spectrum_start_color, spectrum_end_color)
 
-for i in range(0, devices.Count):
-    for j in range(0, devices[i].Lights.Count):
-        frames_by_led[i][j] = ((0 + (i + 0) + (j * 8)) % len(colors), True) # make this a class instead of a tuple
+    def start(self):
+        while True:
+            self.paint()
+            self.advance()
+            # sleep(0.001)
 
-def flip_bits(color):
-    matches = re.fullmatch(r'#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})', color.hex_l)
-    return Color('#%s%s%s' % (matches.group(3), matches.group(2), matches.group(1)))
-    # colors[frame].hex_l[1:]
+    def prepare_sdk(self):
+        aura_sdk = win32com.client.Dispatch("aura.sdk.1")
+        aura_sdk.SwitchMode()
 
-def paint():    
-    # print('Painting frame %d with actual bytes %s' % (frame, hex(color)))
+        self.devices = aura_sdk.Enumerate(LedDeviceType.ALL)
+        # print ("Device Count = " + str(devices.Count))
+        self.aura_sdk = aura_sdk
 
-    # print("Painting %s" % hex(color))
+    def prepare_for_animations(self, spectrum_start_color, spectrum_end_color):
+        self.colors = list(spectrum_start_color.range_to(spectrum_end_color,20))
 
-    # print(dir(devices))
+        self.frames_by_led = defaultdict(lambda: defaultdict(list))
 
-    for dev in range(0, devices.Count):
-        device = devices[dev]
-        # print(dir(dev))
-        # print("LED count: %d" % dev.Lights.Count)
+        for i in range(0, self.devices.Count):
+            for j in range(0, self.devices[i].Lights.Count):
+                self.frames_by_led[i][j] = LedAnimationState((0 + (i + 0) + (j * 8)) % len(self.colors), AnimationDirection.FORWARD)
 
-        for i in range(device.Lights.Count):
-            color = int('ff' + flip_bits(colors[frames_by_led[dev][i][0]]).hex_l[1:], 16)
-            device.Lights(i).color = color # 0xAABBGGRR
+    @staticmethod
+    def flip_bits(color):
+        """Convert a 0xRRGGGBB color to a 0xBBGGRR value"""
+        matches = re.fullmatch(r'#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})', color.hex_l)
+        return Color('#%s%s%s' % (matches.group(3), matches.group(2), matches.group(1)))
 
-        # if dev.Type == LedDeviceType.DRAM_RGB:
-        #     print([method_name for method_name in dir(dev)
-        #               if callable(getattr(dev, method_name))])
+    def paint(self):    
+        # print('Painting frame %d with actual bytes %s' % (frame, hex(color)))
 
-        device.Apply()
+        for dev in range(0, self.devices.Count):
+            device = self.devices[dev]
+            # print("LED count: %d" % dev.Lights.Count)
 
-def advance():
-    for i in range(0, devices.Count):
-        for j in range(0, devices[i].Lights.Count):
-            if frames_by_led[i][j][1]:
-                new_frame = (frames_by_led[i][j][0] + 1)
-                if new_frame >= len(colors):
-                    new_frame = len(colors) - 1
-                    forward = False
+            for i in range(device.Lights.Count):
+                color = int('ff' + LightShow.flip_bits(self.colors[self.frames_by_led[dev][i].frame]).hex_l[1:], 16)
+                device.Lights(i).color = color # 0xAABBGGRR
+
+            device.Apply()
+
+    def advance(self):
+        for i in range(0, self.devices.Count):
+            for j in range(0, self.devices[i].Lights.Count):
+                if self.frames_by_led[i][j].direction == AnimationDirection.FORWARD:
+                    new_frame = (self.frames_by_led[i][j].frame + 1)
+                    if new_frame >= len(self.colors):
+                        new_frame = len(self.colors) - 1
+                        direction = AnimationDirection.REVERSE
+                    else:
+                        direction = AnimationDirection.FORWARD
                 else:
-                    forward = True
-            else:
-                new_frame = (frames_by_led[i][j][0] - 1)
-                if new_frame <= 0:
-                    new_frame = 0
-                    forward = True
-                else:
-                    forward = False
+                    new_frame = (self.frames_by_led[i][j].frame - 1)
+                    if new_frame <= 0:
+                        new_frame = 0
+                        direction = AnimationDirection.FORWARD
+                    else:
+                        direction = AnimationDirection.REVERSE
 
-            frames_by_led[i][j] = (new_frame, forward)
+                self.frames_by_led[i][j] = LedAnimationState(new_frame, direction)
 
 
-forward = True
-while True and running:
-    paint()
-    if forward:
-        frame += 1
-    else:
-        frame -= 1
 
-    if frame >= len(colors):
-        forward = False
-        frame = len(colors) - 1
+def terminate(signalNumber, frame):
+    print ('(SIGTERM) terminating the process')
+    sys.exit()
 
-    if frame <= 0:
-        forward = True
-        frame = 0
-    advance()
-    # sleep(0.001)
+def main():
+    try:
+        print("starting")
+        signal.signal(signal.SIGTERM, terminate)
+        LightShow(Color("#00a6ff"), Color("#5500ff")).start()
+    except KeyboardInterrupt:
+        terminate(None, None)
+
+if __name__ == '__main__':
+    main()
