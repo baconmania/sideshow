@@ -41,7 +41,7 @@ auraSdk.SwitchMode()
 
 signal.signal(signal.SIGTERM, terminateProcess)
 
-colors = list(Color("#00a6ff").range_to(Color("#5500ff"),50))
+colors = list(Color("#00a6ff").range_to(Color("#5500ff"),20))
 devices = auraSdk.Enumerate(LedDeviceType.ALL)
 
 frame = 0
@@ -49,7 +49,7 @@ frames_by_led = defaultdict(lambda: defaultdict(list))
 
 for i in range(0, devices.Count):
     for j in range(0, devices[i].Lights.Count):
-        frames_by_led[i][j] = ((0 + (i + 30) + (j * 5)) % len(colors), True) # make this a class instead of a tuple
+        frames_by_led[i][j] = ((0 + (i + 0) + (j * 8)) % len(colors), True) # make this a class instead of a tuple
 
 def flip_bits(color):
     matches = re.fullmatch(r'#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})', color.hex_l)
