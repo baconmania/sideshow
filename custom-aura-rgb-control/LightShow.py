@@ -67,10 +67,18 @@ class LightShow():
 
     @staticmethod
     def reverse_endianness(color):
-        """Convert a 0xRRGGGBB color to a 0xBBGGRR value"""
+        """Convert a 0xRRGGBB color to a 0xBBGGRR value"""
+        original = int(color.hex_l[1:], 16)
+        reversed = 0
 
-        matches = re.fullmatch(r'#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})', color.hex_l)
-        return Color('#%s%s%s' % (matches.group(3), matches.group(2), matches.group(1)))
+        blue_shifted = (0x0000ff & original) << 16
+        green = (0x00ff00 & original)
+        red_shifted = (0xff0000 & original) >> 16
+
+        reversed |= blue_shifted
+        reversed |= green
+        reversed |= red_shifted
+        return Color('#%s' % hex(reversed)[2:])
 
     def paint(self):    
         # print('Painting frame %d with actual bytes %s' % (frame, hex(color)))
