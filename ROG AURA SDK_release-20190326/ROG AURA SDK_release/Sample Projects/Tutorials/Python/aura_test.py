@@ -61,12 +61,11 @@ class LightShow():
         aura_sdk.SwitchMode()
 
         self.devices = aura_sdk.Enumerate(LedDeviceType.ALL)
-        # print ("Device Count = " + str(devices.Count))
+        print ("Device Count = " + str(self.devices.Count))
         self.aura_sdk = aura_sdk
 
     def prepare_for_animations(self, spectrum_start_color, spectrum_end_color):
         self.colors = list(spectrum_start_color.range_to(spectrum_end_color,20))
-
         self.frames_by_led = defaultdict(lambda: defaultdict(list))
 
         for i in range(0, self.devices.Count):
@@ -81,7 +80,6 @@ class LightShow():
 
     def paint(self):    
         # print('Painting frame %d with actual bytes %s' % (frame, hex(color)))
-
         for dev in range(0, self.devices.Count):
             device = self.devices[dev]
             # print("LED count: %d" % dev.Lights.Count)
