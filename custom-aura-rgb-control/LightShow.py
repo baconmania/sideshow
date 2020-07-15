@@ -78,7 +78,8 @@ class LightShow():
         reversed |= blue_shifted
         reversed |= green
         reversed |= red_shifted
-        return Color('#%s' % hex(reversed)[2:])
+
+        return Color('#%s' % hex(reversed)[2:].zfill(6))
 
     def paint(self):    
         # print('Painting frame %d with actual bytes %s' % (frame, hex(color)))
