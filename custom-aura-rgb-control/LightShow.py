@@ -114,7 +114,7 @@ def main():
     try:
         print("starting")
         signal.signal(signal.SIGTERM, terminate)
-        LightShow(Color("#00a6ff"), Color("#5500ff"), Shimmer()).start()
+        LightShow(Color("#00a6ff"), Color("#5500ff"), ColorTrail()).start()
     except KeyboardInterrupt:
         terminate(None, None)
 
