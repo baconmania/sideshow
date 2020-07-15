@@ -1,11 +1,15 @@
 # sideshow
+A collection of unnecessary-yet-cute mods to my desktop PC
+## rPi-based touchscreen resource monitor
+![Sideshow GPU page](images/sideshow-gpu.jpg)
+![Sideshow CPU page](images/sideshow-cpu.jpg)
 
 ## Custom Asus AURA Controller
 ### Color Trail
-![Upward Scroll](images/color-trail.gif)
+![Color Trail demo](images/color-trail.gif)
 
 ### Shimmer
-![Upward Scroll](images/shimmer.gif)
+![Shimmer demo](images/shimmer.gif)
 
 ### Upward Scroll
-![Upward Scroll](images/upward-scroll.gif)
+![Upward Scroll demo](images/upward-scroll.gif)
