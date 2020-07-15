@@ -14,4 +14,4 @@ class ColorTrail(LightShowEffect):
 
 class Shimmer(LightShowEffect):
     def set_initial_state_for_led(self, dram_stick, led_on_stick, colors):
-        return LedAnimationState((0 + (dram_stick + 0) + (led_on_stick * 8)) % len(colors), AnimationDirection.FORWARD)
+        return LedAnimationState((dram_stick + (led_on_stick * 8)) % len(colors), AnimationDirection.FORWARD)
