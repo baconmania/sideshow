@@ -47,7 +47,6 @@ class LightShow():
         while True:
             self.paint()
             self.advance()
-            # sleep(0.0001)
 
     def prepare_sdk(self):
         aura_sdk = win32com.client.Dispatch("aura.sdk.1")
