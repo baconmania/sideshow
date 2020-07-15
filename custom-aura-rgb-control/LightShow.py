@@ -67,8 +67,9 @@ class LightShow():
                 self.frames_by_led[i][j] = self.lightshow_effect.set_initial_state_for_led(i, j, self.colors)
 
     @staticmethod
-    def flip_bits(color):
+    def reverse_endianness(color):
         """Convert a 0xRRGGGBB color to a 0xBBGGRR value"""
+
         matches = re.fullmatch(r'#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})', color.hex_l)
         return Color('#%s%s%s' % (matches.group(3), matches.group(2), matches.group(1)))
 
@@ -79,7 +80,7 @@ class LightShow():
             # print("LED count: %d" % dev.Lights.Count)
 
             for i in range(device.Lights.Count):
-                color = int('ff' + LightShow.flip_bits(self.colors[self.frames_by_led[dev][i].frame]).hex_l[1:], 16)
+                color = int('ff' + LightShow.reverse_endianness(self.colors[self.frames_by_led[dev][i].frame]).hex_l[1:], 16)
                 device.Lights(i).color = color # 0xAABBGGRR
 
             device.Apply()
