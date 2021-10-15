@@ -6,12 +6,12 @@ class LightShowEffect:
 
 class UpwardScroll(LightShowEffect):
     def set_initial_state_for_led(self, dram_stick, led_on_stick, colors):
-        return LedAnimationState(led_on_stick % len(colors), AnimationDirection.FORWARD)
+        return LedAnimationState(led_on_stick % len(colors), AnimationDirection.REVERSE)
 
 class ColorTrail(LightShowEffect):
     def set_initial_state_for_led(self, dram_stick, led_on_stick, colors):
-        return LedAnimationState(((dram_stick * 8) + led_on_stick) % len(colors), AnimationDirection.FORWARD)
+        return LedAnimationState(((dram_stick * 8) + led_on_stick) % len(colors), AnimationDirection.REVERSE)
 
 class Shimmer(LightShowEffect):
     def set_initial_state_for_led(self, dram_stick, led_on_stick, colors):
-        return LedAnimationState((dram_stick + (led_on_stick * 8)) % len(colors), AnimationDirection.FORWARD)
+        return LedAnimationState((dram_stick + (led_on_stick * 8)) % len(colors), AnimationDirection.REVERSE)

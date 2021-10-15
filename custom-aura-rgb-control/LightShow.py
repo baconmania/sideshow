@@ -36,6 +36,7 @@ class LightShow():
     colors = []
     frames_by_led = None
     lightshow_effect = None
+    dark = False
 
     def __init__(self, spectrum_start_color, spectrum_end_color, lightshow_effect):
         self.lightshow_effect = lightshow_effect
@@ -47,6 +48,7 @@ class LightShow():
         while True:
             self.paint()
             self.advance()
+            sleep(0)
 
     def prepare_sdk(self):
         aura_sdk = win32com.client.Dispatch("aura.sdk.1")
@@ -57,11 +59,13 @@ class LightShow():
         self.aura_sdk = aura_sdk
 
     def prepare_for_animations(self, spectrum_start_color, spectrum_end_color):
-        self.colors = list(spectrum_start_color.range_to(spectrum_end_color,30))
+        self.colors = list(spectrum_start_color.range_to(spectrum_end_color,32))
         self.colors.reverse()
         self.frames_by_led = defaultdict(lambda: defaultdict(list))
 
         for i in range(0, self.devices.Count):
+            if self.devices[i].Type == LedDeviceType.MB_ADDRESABLE:
+                print(self.devices[i].Lights.Count) ## There are 120 LEDs total, 10 LEDs per "cable" on the ribbon
             for j in range(0, self.devices[i].Lights.Count):
                 self.frames_by_led[i][j] = self.lightshow_effect.set_initial_state_for_led(i, j, self.colors)
 
@@ -88,12 +92,20 @@ class LightShow():
             # print("LED count: %d" % dev.Lights.Count)
 
             for i in range(device.Lights.Count):
-                color = int('ff' + LightShow.reverse_endianness(self.colors[self.frames_by_led[dev][i].frame]).hex_l[1:], 16)
+                if self.dark:
+                    color = 0
+                else:
+                    color = int('ff' + LightShow.reverse_endianness(self.colors[self.frames_by_led[dev][i].frame]).hex_l[1:], 16)
                 device.Lights(i).color = color # 0xAABBGGRR
 
+        for dev in range(0, self.devices.Count):
+            device = self.devices[dev]
             device.Apply()
 
     def advance(self):
+        if self.dark:
+            return
+        
         for i in range(0, self.devices.Count):
             for j in range(0, self.devices[i].Lights.Count):
                 if self.frames_by_led[i][j].direction == AnimationDirection.FORWARD:
@@ -113,6 +125,9 @@ class LightShow():
 
                 self.frames_by_led[i][j] = LedAnimationState(new_frame, direction)
 
+    def toggle_darkness(self):
+        self.dark = not self.dark
+
 
 
 def terminate(signalNumber, frame):
@@ -123,7 +138,7 @@ def main():
     try:
         print("starting")
         signal.signal(signal.SIGTERM, terminate)
-        LightShow(Color("#00a6ff"), Color("#5500ff"), ColorTrail()).start()
+        LightShow(Color("#006aff"), Color("#9000ff"), ColorTrail()).start()
     except KeyboardInterrupt:
         terminate(None, None)
 
