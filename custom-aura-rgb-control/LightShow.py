@@ -1,4 +1,5 @@
 import win32com.client
+import pythoncom
 import signal
 from enum import IntEnum
 from enum import Enum
@@ -9,7 +10,9 @@ import re
 from collections import defaultdict
 from lightshow_common import AnimationDirection, LedAnimationState
 from LightShowEffects import UpwardScroll, ColorTrail, Shimmer
-
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from functools import partial
 
 class LedDeviceType(IntEnum):
     ALL = 0
@@ -36,22 +39,30 @@ class LightShow():
     colors = []
     frames_by_led = None
     lightshow_effect = None
+    spectrum_start_color = None
+    spectrum_end_color = None
     dark = False
 
-    def __init__(self, spectrum_start_color, spectrum_end_color, lightshow_effect):
+    def __init__(self, lightshow_effect, spectrum_start_color, spectrum_end_color):
+        print("__init__ LightShow")
         self.lightshow_effect = lightshow_effect
-
-        self.prepare_sdk()
-        self.prepare_for_animations(spectrum_start_color, spectrum_end_color)
+        self.spectrum_start_color = spectrum_start_color
+        self.spectrum_end_color = spectrum_end_color
 
     def start(self):
+        pythoncom.CoInitialize()
+        self.prepare_sdk()
+        self.prepare_for_animations(self.spectrum_start_color, self.spectrum_end_color)
+
         while True:
             self.paint()
             self.advance()
             sleep(0)
 
     def prepare_sdk(self):
+        print("Getting SDK handle...")
         aura_sdk = win32com.client.Dispatch("aura.sdk.1")
+        print("Got SDK handle %s" % aura_sdk)
         aura_sdk.SwitchMode()
 
         self.devices = aura_sdk.Enumerate(LedDeviceType.ALL)
@@ -134,13 +145,45 @@ def terminate(signalNumber, frame):
     print ('(SIGTERM) terminating the process')
     sys.exit()
 
-def main():
+def animate(lightshow):
     try:
-        print("starting")
-        signal.signal(signal.SIGTERM, terminate)
-        LightShow(Color("#006aff"), Color("#9000ff"), ColorTrail()).start()
+        print("starting animation")
+        lightshow.start()
     except KeyboardInterrupt:
         terminate(None, None)
 
+def serve(lightshow):
+    print("Starting server")
+    webServer = HTTPServer(("0.0.0.0", 9898), partial(DarknessToggleServer, lightshow))
+
+    try:
+        webServer.serve_forever()
+        print("Server started")
+    except KeyboardInterrupt:
+        pass
+
+    webServer.server_close()
+    print("Server stopped.")
+
+
+class DarknessToggleServer(BaseHTTPRequestHandler):
+    lightshow = None
+
+    def __init__(self, ):
+        self.lightshow = lightshow
+
+
+    def do_GET(self):
+        lightshow.toggle_darkness()
+        self.send_response(204)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(bytes("ok", "utf-8"))
+
 if __name__ == '__main__':
-    main()
+    signal.signal(signal.SIGTERM, terminate) # this doesn't work anymore
+    lightshow = LightShow(ColorTrail(), Color("#006aff"), Color("#9000ff"))
+    x = threading.Thread(target=animate, args=[lightshow])
+    x.start()
+    # server = threading.Thread(target=serve, args=[lightshow])
+    # server.start()
