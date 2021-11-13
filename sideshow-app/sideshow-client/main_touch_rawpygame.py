@@ -2,7 +2,7 @@
 
 import os
 import sys
-import logging 
+import logging
 import signal
 import time
 import traceback
@@ -11,6 +11,7 @@ import pygame, pigame
 import random
 from pygame.locals import *
 import RPi.GPIO as GPIO
+import requests
 import MetricsClient
 from pages import SideshowPage, SideshowDetailPage, HomePage, GpuDetailPage, CpuDetailPage
 
@@ -76,7 +77,7 @@ class Sideshow():
       logger.debug('Checking if touch at %s collides with Rect %s', touch_pos, touch_target_rect)
       if touch_target_rect.collidepoint(touch_pos):
         return touch_target_id
-    
+
     return None
 
   def get_page_for_touch_target(self, touch_target_id):
@@ -111,7 +112,15 @@ class Sideshow():
 
   def init_metrics_refresher(self):
     self.metrics_refresher = MetricsRefresher()
-    threading.Thread(target=self.metrics_refresher).start()
+    metrics_refresher_thread = threading.Thread(target=self.metrics_refresher)
+    metrics_refresher_thread.daemon = True
+    metrics_refresher_thread.start()
+
+  def init_button_listener(self):
+    self.button_listener = ButtonListener()
+    button_listener_thread = threading.Thread(target=self.button_listener)
+    button_listener_thread.daemon = True
+    button_listener_thread.start()
 
   def init_pygame(self):
     pygame.init()
@@ -130,6 +139,7 @@ class Sideshow():
 
   def run(self):
     self.init_metrics_refresher()
+    self.init_button_listener()
     self.init_pygame()
     self.init_touchscreen()
 
@@ -148,6 +158,59 @@ class Sideshow():
         # Try again after a second
       finally:
         time.sleep(0.05)
+
+class ButtonListener():
+  PRESSED = False
+  UNPRESSED = True
+
+  pins = {
+    'BTN_0': 27,
+    'BTN_1': 23,
+    'BTN_2': 22,
+    'BTN_3': 17,
+  }
+
+  handlers = {
+    pins['BTN_0']: lambda : requests.get('http://baconmania.cc:9898/'),
+    pins['BTN_1']: None,
+    pins['BTN_2']: None,
+    pins['BTN_3']: None,
+  }
+
+  def __init__(self):
+    self.last_press_event_fired = {
+      ButtonListener.pins['BTN_0']: None,
+      ButtonListener.pins['BTN_1']: None,
+      ButtonListener.pins['BTN_2']: None,
+      ButtonListener.pins['BTN_3']: None,
+    }
+
+  def __call__(self):
+    self.listen()
+
+  def is_pressed(self, pin):
+    return GPIO.input(pin) == ButtonListener.PRESSED
+
+  def is_valid_press(self, pin):
+    return (self.last_press_event_fired[pin] is None or time.time() - self.last_press_event_fired[pin] > 1)
+
+  def listen(self):
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(ButtonListener.pins['BTN_0'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(ButtonListener.pins['BTN_1'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(ButtonListener.pins['BTN_2'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(ButtonListener.pins['BTN_3'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    while True:
+      pressed_button_pins = [ pin for pin in ButtonListener.pins.values() if self.is_pressed(pin) ]
+      valid_pressed_button_pins = [ pin for pin in pressed_button_pins if self.is_valid_press(pin) ]
+
+      for pin in valid_pressed_button_pins:
+        self.last_press_event_fired[pin] = time.time()
+
+      for pin in valid_pressed_button_pins:
+        if ButtonListener.handlers[pin] is not None:
+          ButtonListener.handlers[pin]()
 
 
 def init_logging():
