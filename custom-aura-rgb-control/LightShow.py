@@ -154,7 +154,7 @@ def animate(lightshow):
 
 def serve(lightshow):
     print("Starting server")
-    webServer = HTTPServer(("0.0.0.0", 9898), partial(DarknessToggleServer, lightshow))
+    webServer = HTTPServer(("0.0.0.0", 9898), DarknessToggleServerClassFactory(lightshow))
 
     try:
         webServer.serve_forever()
@@ -166,24 +166,28 @@ def serve(lightshow):
     print("Server stopped.")
 
 
-class DarknessToggleServer(BaseHTTPRequestHandler):
-    lightshow = None
+def DarknessToggleServerClassFactory(lightshow):
+    class DarknessToggleServer(BaseHTTPRequestHandler):
+        lightshow = None
 
-    def __init__(self, ):
-        self.lightshow = lightshow
+        def __init__(self, *args, **kwargs):
+             super(DarknessToggleServer, self).__init__(*args, **kwargs)
+             self.lightshow = lightshow
+
+        def do_GET(self):
+            lightshow.toggle_darkness()
+            self.send_response(204)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+
+    return DarknessToggleServer
 
 
-    def do_GET(self):
-        lightshow.toggle_darkness()
-        self.send_response(204)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        self.wfile.write(bytes("ok", "utf-8"))
 
 if __name__ == '__main__':
     signal.signal(signal.SIGTERM, terminate) # this doesn't work anymore
     lightshow = LightShow(ColorTrail(), Color("#006aff"), Color("#9000ff"))
     x = threading.Thread(target=animate, args=[lightshow])
     x.start()
-    # server = threading.Thread(target=serve, args=[lightshow])
-    # server.start()
+    server = threading.Thread(target=serve, args=[lightshow])
+    server.start()
