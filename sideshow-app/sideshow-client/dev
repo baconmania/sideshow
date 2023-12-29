@@ -1,3 +1,3 @@
 #!/bin/bash
-export PIGAME_SWAPXY=on && export PIGAME_INVERTY=on
+export PIGAME_SWAPXY=off && export PIGAME_INVERTY=on && export PIGAME_INVERTX=on
 sudo -E ./watch main_touch_rawpygame.py
